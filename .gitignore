@@ -1,0 +1,6 @@
+# Rust build folder
+/target
+
+# Docker developer environment
+dev_env/
+.env
