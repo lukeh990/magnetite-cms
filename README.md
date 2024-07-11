@@ -9,4 +9,16 @@ with the Rust Programming Language and will magnetize your customers.
 Core Features:
 - Blazing Fast Preformance
 - Infinite Expandability with Plugins
-- Built-in WYSIWYG editor
+- Built-in editor
+
+## Sponsors
+Sponsorships of any amount are accept via GitHub Sponsorships. 
+Anyone who sponsors this project will be massively appreciated.
+
+Sponsors (in chronological order):
+1. Exehad
+
+## Development
+This project is in development. Use at own risk.
+
+A mechanism for receiving development updates is in the works. Please stand by.
