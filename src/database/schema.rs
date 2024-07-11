@@ -6,17 +6,29 @@
  */
 
 use chrono::NaiveDateTime;
+use uuid::Uuid;
 
+#[derive(sqlx::FromRow)]
 pub struct Page {
     path: String,
     created_at: NaiveDateTime,
-    // created_by: Unkown
+    created_by: AdminUser,
     modified_at: NaiveDateTime,
-    // modified_by: Unkown
+    modified_by: AdminUser,
     published: bool,
     // permissions: Unkown
     // page_metadata: Unknown
     body: String,
     // styles: Unkown
     // scripts: Unkown
+}
+
+#[derive(sqlx::FromRow, sqlx::Type)]
+pub struct AdminUser {
+    uuid: Uuid,
+    // permissions: Unkown
+    username: String,
+    enabled: bool,
+    email: String,
+    // authentication: Unkown
 }

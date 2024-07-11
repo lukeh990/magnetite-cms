@@ -15,7 +15,8 @@
  * - Inactive until error then attempt restart
  */
 
-use color_eyre::eyre::Result;
+use std::env;
+use color_eyre::Result;
 
 mod database;
 
@@ -27,12 +28,13 @@ async fn main() -> Result<()> {
     println!("Magnetite CMS Server Starting...");
 
     // Pull environment variables
+    let database_url = env::var("DATABASE_URL")?;
     
     // Load Plugins
     println!("Plugin Functionality is still being implemented");
 
     // Setup database thread
-    database::init_db();
+    let _db = database::init_db(database_url).await?;
 
     // Setup poem thread
 
