@@ -15,8 +15,8 @@ Core Features:
 Sponsorships of any amount are accept via GitHub Sponsorships. 
 Anyone who sponsors this project will be massively appreciated.
 
-Sponsors (in chronological order):
-1. Exehad
+Sponsors:
+<!-- sponsors --><!-- sponsors -->
 
 ## Development
 This project is in development. Use at own risk.
