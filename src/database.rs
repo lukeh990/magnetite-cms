@@ -29,30 +29,32 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn get_page(&self, path: String, skip_cache: bool) -> Result<schema::Page> {
+    pub async fn get_page<S>(&self, path: S, skip_cache: bool) -> Result<schema::Page> 
+    where S: Into<String> {
         let (tx, rx) = oneshot::channel::<Result<schema::Page>>();
-        
-        self.tx.send(DatabaseMpscCommand::GetPage(path, skip_cache, tx)).await?;
+
+        self.tx.send(DatabaseMpscCommand::GetPage(path.into(), skip_cache, tx)).await?;
 
         rx.await?
     }
 }
 
-pub async fn process_cmd(cmd: DatabaseMpscCommand, pool: &PgPool) {
+pub async fn process_cmd(cmd: DatabaseMpscCommand, pool: &PgPool) -> bool {
     match cmd {
         DatabaseMpscCommand::GetPage(path, skip_cache, reply) => {
             if skip_cache {
-                let page: schema::Page = match sqlx::query_as("SELECT * FROM pages WHERE path = ?")
+                let page: schema::Page = match sqlx::query_as("SELECT * FROM pages WHERE path = $1")
                     .bind(path)
                     .fetch_one(pool).await {
                         Ok(page) => page,
                         Err(err) => {
                             let _ = reply.send(Err(err.into()));
-                            return;
+                            return true;
                         }
                     };
                 let _ = reply.send(Ok(page));
             }
+            true
         }
     }
 }
@@ -78,6 +80,8 @@ pub async fn init_db(database_url: String) -> Result<Database> {
                        },
                        TryRecvError::Disconnected => {
                            // Throw error message and stop loop
+                           eprintln!("All transmitters have been disconnected. Exiting...");
+                           break;
                        }
                    }
                }

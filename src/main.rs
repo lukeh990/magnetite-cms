@@ -34,10 +34,12 @@ async fn main() -> Result<()> {
     println!("Plugin Functionality is still being implemented");
 
     // Setup database thread
-    let _db = database::init_db(database_url).await?;
+    println!("Initializing DB");
+    let db = database::init_db(database_url).await?;
 
     // Setup poem thread
 
+    // Shutdown
     println!("Magnetite CMS Server has stopped.");
     Ok(())
 }
