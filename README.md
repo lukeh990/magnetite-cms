@@ -16,7 +16,7 @@ Sponsorships of any amount are accept via GitHub Sponsorships.
 Anyone who sponsors this project will be massively appreciated.
 
 Sponsors:
-<!-- sponsors --><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/Exehad"><img src="https://github.com/Exehad.png" width="60px" alt="" /></a><!-- sponsors -->
 
 ## Development
 This project is in development. Use at own risk.
