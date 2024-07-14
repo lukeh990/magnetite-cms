@@ -21,4 +21,12 @@ Sponsors:
 ## Development
 This project is in development. Use at own risk.
 
-A mechanism for receiving development updates is in the works. Please stand by.
+A mechanism for receiving development updates is in the works.
+
+Project To-Do List:
+- [X] Basic Database API
+- [X] Basic Database Caching
+- [ ] HTTP Admin API
+- [ ] HTTP renderer
+- [ ] Admin UI
+- [ ] Plugin support
