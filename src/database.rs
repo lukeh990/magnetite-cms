@@ -12,6 +12,7 @@ use tokio::sync::mpsc::error::TryRecvError;
 use color_eyre::Result;
 
 mod schema;
+mod cache;
 
 /// DatabaseMpscCommand
 /// This enum contains all possible commands that can be issued to the database
@@ -39,22 +40,27 @@ impl Database {
     }
 }
 
-pub async fn process_cmd(cmd: DatabaseMpscCommand, pool: &PgPool) -> bool {
+pub async fn process_cmd(cmd: DatabaseMpscCommand, pool: &PgPool, cache: &mut cache::Cache) {
     match cmd {
         DatabaseMpscCommand::GetPage(path, skip_cache, reply) => {
-            if skip_cache {
-                let page: schema::Page = match sqlx::query_as("SELECT * FROM pages WHERE path = $1")
-                    .bind(path)
-                    .fetch_one(pool).await {
-                        Ok(page) => page,
-                        Err(err) => {
-                            let _ = reply.send(Err(err.into()));
-                            return true;
-                        }
-                    };
-                let _ = reply.send(Ok(page));
+            if !skip_cache {
+                if let Some(result) = cache.get_page(&path).await {
+                    let _ = reply.send(Ok(result));
+                    return;
+                }
             }
-            true
+
+            let page: schema::Page = match sqlx::query_as("SELECT * FROM pages WHERE path = $1")
+                .bind(path)
+                .fetch_one(pool).await {
+                    Ok(page) => page,
+                    Err(err) => {
+                        let _ = reply.send(Err(err.into()));
+                        return;
+                    }
+                };
+            cache.set_page(&page).await;
+            let _ = reply.send(Ok(page));
         }
     }
 }
@@ -68,10 +74,11 @@ pub async fn init_db(database_url: String) -> Result<Database> {
     let pool = PgPoolOptions::new().connect(&database_url).await?;
 
     tokio::spawn(async move {
+        let mut cache = cache::Cache::new().await; 
         loop {
            match rx.try_recv() {
                Ok(cmd) => {
-                   process_cmd(cmd, &pool).await;
+                   process_cmd(cmd, &pool, &mut cache).await;
                },
                Err(err) => {
                    match err {
@@ -81,6 +88,7 @@ pub async fn init_db(database_url: String) -> Result<Database> {
                        TryRecvError::Disconnected => {
                            // Throw error message and stop loop
                            eprintln!("All transmitters have been disconnected. Exiting...");
+                           cache.close().await;
                            break;
                        }
                    }

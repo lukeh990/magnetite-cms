@@ -36,6 +36,7 @@ async fn main() -> Result<()> {
     // Setup database thread
     println!("Initializing DB");
     let db = database::init_db(database_url).await?;
+    println!("Sucessfully connected to DB");
 
     // Setup poem thread
 
