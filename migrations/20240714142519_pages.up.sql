@@ -9,10 +9,10 @@ CREATE TABLE IF NOT EXISTS admins (
 
 CREATE TABLE IF NOT EXISTS pages (
     path text NOT NULL,
-    created_at timestamp default current_timestamp,
-    created_by uuid references admins(id),
-    modified_at timestamp default current_timestamp,
-    modified_by uuid references admins(id),
+    created_at timestamp default current_timestamp NOT NULL,
+    created_by uuid references admins(id) NOT NULL,
+    modified_at timestamp default current_timestamp NOT NULL,
+    modified_by uuid references admins(id) NOT NULL,
     published boolean NOT NULL,
     body text NOT NULL,
     PRIMARY KEY (path)
