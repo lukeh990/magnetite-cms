@@ -9,7 +9,9 @@ use sqlx::postgres::PgPoolOptions;
 use tokio::sync::{mpsc, oneshot};
 use tokio::sync::mpsc::error::TryRecvError;
 use color_eyre::Result;
+use tokio::task::JoinHandle;
 use uuid::Uuid;
+use super::util::println;
 
 mod schema;
 mod cache;
@@ -52,6 +54,7 @@ pub enum DatabaseMpscCommand {
 
 pub type DatabaseOneshotReply<T> = oneshot::Sender<Result<T>>;
 
+#[derive(Debug, Clone)]
 pub struct Database {
     tx: mpsc::Sender<DatabaseMpscCommand>,
 }
@@ -123,42 +126,34 @@ impl Database {
 
         rx.await?
     }
-}
 
+    pub async fn new(database_url: String) -> Result<Database> {
+        // No idea if 10 is a big enough channel. Remember to change.
+        let (tx, mut rx) = mpsc::channel::<DatabaseMpscCommand>(10);
 
-/// init_db()
-/// Initilize DB connection and return struct.
-pub async fn init_db(database_url: String) -> Result<Database> {
-    // No idea if 10 is a big enough channel. Remember to change.
-    let (tx, mut rx) = mpsc::channel::<DatabaseMpscCommand>(10);
+        let pool = PgPoolOptions::new().connect(&database_url).await?;
 
-    let pool = PgPoolOptions::new().connect(&database_url).await?;
-
-    tokio::spawn(async move {
-        let mut cache = cache::Cache::new().await; 
-        loop {
-           match rx.try_recv() {
-               Ok(cmd) => {
-                   process::cmd(cmd, &pool, &mut cache).await;
-               },
-               Err(err) => {
-                   match err {
-                       TryRecvError::Empty => {
-                           // Do cache cleanup and stuff
-                       },
-                       TryRecvError::Disconnected => {
-                           // Throw error message and stop loop
-                           eprintln!("All transmitters have been disconnected. Exiting...");
-                           cache.close().await;
-                           break;
-                       }
-                   }
-               }
+        let join_handle = tokio::spawn(async move {
+            let mut cache = cache::Cache::new().await; 
+            loop {
+                match rx.try_recv() {
+                    Ok(cmd) => {
+                        process::cmd(cmd, &pool, &mut cache).await;
+                    },
+                    Err(err) => {
+                        if err == TryRecvError::Disconnected {
+                            // Throw error message and stop loop
+                            println::error("All transmitters have been disconnected. Exiting...");
+                            cache.close().await;
+                            break;
+                        }
+                    }
+                }
             }
-        }
-    });
+        });
 
-    Ok(Database {
-        tx
-    })
+        Ok(Database {
+            tx
+        })
+    }
 }
