@@ -56,8 +56,8 @@ async fn main() -> Result<()> {
     println::info("Sucessfully connected to DB");
 
     // Setup poem thread
-    println::info("Starting HTTP Server");
-    web::start_server(server_bind, db).await?;
+    println::info(format!("Starting HTTP Server on {}", server_bind));
+    web::start_server(server_bind).await?;
 
     // Shutdown
     println::error("Magnetite CMS Server has stopped.");

@@ -5,39 +5,36 @@
  * See the file "LICENSE" in the root of this project.
  */
 
-use poem::{get, handler, http::StatusCode, listener::TcpListener, middleware::AddData, web::{Data, Html, Path}, EndpointExt, Response, Route, Server, Result};
+use actix_http::{HttpService, Request, Response, StatusCode, Error};
+use actix_server::Server;
+use std::time::Duration;
+use bytes::BytesMut;
+use color_eyre::Result;
+use futures_util::StreamExt as _;
+
 use crate::util::println;
-use super::database::Database;
 
-#[handler]
-async fn index(Path(name): Path<String>, db: Data<&Database>) -> Result<Response> {
-    let name = format!("/{}", name);
-    let page = match db.get_page(name, false).await {
-        Ok(page) => page,
-        Err(err) => {
-            return Ok(Response::builder().status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(err.to_string()));
-        }
-    };
-    dbg!(&page);
-    Ok(Response::builder().body(format!("
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <title>Test</title>
-            </head>
-            <body>
-                {}
-            </body>
-        </html>", page.body)))
-}
+pub async fn start_server(bind: String) -> Result<()> {
+    Server::build()
+        .bind("magnnetite-cms", bind, || {
+            HttpService::build()
+                .client_request_timeout(Duration::from_secs(1))
+                .client_disconnect_timeout(Duration::from_secs(1))
+                // handles HTTP/1.1 and HTTP/2
+                .finish(|mut req: Request| async move {
+                    let mut body = BytesMut::new();
+                    while let Some(item) = req.payload().next().await {
+                        body.extend_from_slice(&item?);
+                    }
 
-pub async fn start_server(bind: String, db: Database) -> std::result::Result<(), std::io::Error> {
-    let app = Route::new().at("/*path", get(index)).with(AddData::new(db.clone()));
+                    println::info(format!("request body: {:?}", body));
 
-    println::info(format!("Staring server on: {}", &bind));
+                    let res = Response::build(StatusCode::OK)
+                        .body(body);
 
-    Server::new(TcpListener::bind(bind))
-        .run(app)
-        .await
+                    Ok::<_, Error>(res)
+                })
+                .tcp()
+        })?.run().await?;
+    Ok(())
 }
