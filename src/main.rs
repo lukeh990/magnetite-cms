@@ -15,13 +15,13 @@
  * - Inactive until error then attempt restart
  */
 
-use std::env;
 use color_eyre::Result;
+use std::env;
 use util::println;
 
 mod database;
-mod web;
 mod util;
+mod web;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
             return Ok(());
         }
     };
-    
+
     let server_bind = match env::var("SERVER_BIND") {
         Ok(var) => var,
         Err(_) => {
@@ -46,7 +46,7 @@ async fn main() -> Result<()> {
             String::from("127.0.0.1:3000")
         }
     };
-    
+
     // Load Plugins
     println::warn("Plugin Functionality is still being implemented");
 
@@ -55,9 +55,9 @@ async fn main() -> Result<()> {
     let db = database::Database::new(database_url).await?;
     println::info("Sucessfully connected to DB");
 
-    // Setup poem thread
+    // Setup actix thread
     println::info(format!("Starting HTTP Server on {}", server_bind));
-    web::start_server(server_bind).await?;
+    web::start_server(server_bind, db).await?;
 
     // Shutdown
     println::error("Magnetite CMS Server has stopped.");

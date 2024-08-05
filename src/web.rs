@@ -5,36 +5,47 @@
  * See the file "LICENSE" in the root of this project.
  */
 
-use actix_http::{HttpService, Request, Response, StatusCode, Error};
-use actix_server::Server;
-use std::time::Duration;
-use bytes::BytesMut;
+use crate::database::Database;
+use actix_web::{get, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use color_eyre::Result;
-use futures_util::StreamExt as _;
 
-use crate::util::println;
+struct AppState {
+    db: Database,
+}
 
-pub async fn start_server(bind: String) -> Result<()> {
-    Server::build()
-        .bind("magnnetite-cms", bind, || {
-            HttpService::build()
-                .client_request_timeout(Duration::from_secs(1))
-                .client_disconnect_timeout(Duration::from_secs(1))
-                // handles HTTP/1.1 and HTTP/2
-                .finish(|mut req: Request| async move {
-                    let mut body = BytesMut::new();
-                    while let Some(item) = req.payload().next().await {
-                        body.extend_from_slice(&item?);
-                    }
+#[get("/admin")]
+async fn admin() -> impl Responder {
+    HttpResponse::Ok().body("Admin Page")
+}
 
-                    println::info(format!("request body: {:?}", body));
+#[get("/{tail:.*}")]
+async fn managed_pages(req: HttpRequest, data: web::Data<AppState>) -> impl Responder {
+    let tail = match req.match_info().get("tail") {
+        Some(value) => format!("/{}", value),
+        None => return HttpResponse::BadRequest().body("No Tailing String"),
+    };
 
-                    let res = Response::build(StatusCode::OK)
-                        .body(body);
+    let page = match data.db.get_page(tail, false).await {
+        Ok(page) => page,
+        Err(err) => match err.downcast_ref::<sqlx::Error>() {
+            Some(sqlx::Error::RowNotFound) => {
+                return HttpResponse::NotFound().body("404 Not Found")
+            }
+            _ => return HttpResponse::InternalServerError().body("500 Internal Server Error"),
+        },
+    };
 
-                    Ok::<_, Error>(res)
-                })
-                .tcp()
-        })?.run().await?;
-    Ok(())
+    HttpResponse::Ok().body(format!("{:?}", page))
+}
+
+pub async fn start_server(bind: String, db: Database) -> Result<()> {
+    Ok(HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(AppState { db: db.clone() }))
+            .service(admin)
+            .service(managed_pages)
+    })
+    .bind(bind)?
+    .run()
+    .await?)
 }

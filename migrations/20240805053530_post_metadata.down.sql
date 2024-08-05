@@ -1,0 +1,2 @@
+ALTER TABLE pages
+  DROP COLUMN metadata RESTRICT;

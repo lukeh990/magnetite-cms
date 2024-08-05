@@ -17,7 +17,7 @@ pub struct Page {
     pub modified_by: Uuid,
     pub published: bool,
     // permissions: Unkown
-    // page_metadata: Unknown
+    pub metadata: Vec<String>,
     pub body: String,
     // styles: Unkown
     // scripts: Unkown
