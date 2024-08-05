@@ -10,11 +10,13 @@ use color_eyre::Result;
 use sqlx::postgres::PgPoolOptions;
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::{mpsc, oneshot};
+use tokio_util::sync::CancellationToken;
+use tokio_util::task::TaskTracker;
 use uuid::Uuid;
 
 mod cache;
 mod process;
-mod schema;
+pub mod schema;
 
 // This enum contains all possible commands that can be issued to the database
 pub enum DatabaseMpscCommand {
@@ -145,7 +147,13 @@ impl Database {
         rx.await?
     }
 
-    pub async fn new(database_url: String) -> Result<Database> {
+    pub async fn new(
+        database_url: String,
+        tracker: &TaskTracker,
+        cancel_token: CancellationToken,
+    ) -> Result<Database> {
+        let cache_cancel_token = cancel_token.clone();
+
         // No idea if 10 is a big enough channel. Remember to change.
         let (tx, mut rx) = mpsc::channel::<DatabaseMpscCommand>(10);
 
@@ -155,8 +163,10 @@ impl Database {
         println::info("Running DB Migrations");
         sqlx::migrate!("./migrations").run(&pool).await?;
 
-        tokio::spawn(async move {
-            let mut cache = cache::Cache::new().await;
+        let cache_tracker = tracker.clone();
+
+        tracker.spawn(async move {
+            let mut cache = cache::Cache::new(cache_tracker, cache_cancel_token).await;
             loop {
                 match rx.try_recv() {
                     Ok(cmd) => {
@@ -166,10 +176,14 @@ impl Database {
                         if err == TryRecvError::Disconnected {
                             // Throw error message and stop loop
                             println::error("All transmitters have been disconnected. Exiting...");
-                            cache.close().await;
                             break;
                         }
                     }
+                }
+
+                if cancel_token.is_cancelled() {
+                    println::error("DB Cancellation Token Received...");
+                    break;
                 }
             }
         });

@@ -5,70 +5,70 @@
  * See the file "LICENSE" in the root of this project.
  */
 
+use super::println;
+use super::schema;
+use chrono::{NaiveDateTime, TimeDelta, Utc};
 use std::collections::HashMap;
-use tokio::{sync::Mutex, task};
 use std::sync::Arc;
 use std::time::Duration;
-use chrono::{NaiveDateTime, TimeDelta, Utc};
+use tokio::sync::Mutex;
 use tokio::time::sleep;
+use tokio_util::sync::CancellationToken;
+use tokio_util::task::TaskTracker;
 use uuid::Uuid;
-use super::schema;
-
 
 #[derive(Eq, PartialEq, Hash, Clone)]
 enum CacheKey {
     Page(String),
-    User(Uuid)
+    User(Uuid),
 }
 
 #[derive(Clone)]
 enum CacheValue {
     Page(schema::Page, NaiveDateTime),
-    User(schema::AdminUser, NaiveDateTime)
+    User(schema::AdminUser, NaiveDateTime),
 }
 
 pub struct Cache {
     storage: Arc<Mutex<HashMap<CacheKey, CacheValue>>>,
-    loop_handle: task::JoinHandle<()>
 }
 
 impl Cache {
-    pub async fn new() -> Cache {
+    pub async fn new(tracker: TaskTracker, cancel_token: CancellationToken) -> Cache {
         let storage = Arc::new(Mutex::new(HashMap::new()));
 
         let thread_storage = storage.clone();
-        let loop_handle = tokio::spawn(async move {
+        tracker.spawn(async move {
             loop {
-                sleep(Duration::from_secs(5)).await;
+                sleep(Duration::from_secs(1)).await;
                 let mut storage = thread_storage.lock().await;
-                
+
                 for (key, value) in storage.clone().into_iter() {
                     let valid_until = match value {
                         CacheValue::Page(_, valid_until) => valid_until,
-                        CacheValue::User(_, valid_until) => valid_until
+                        CacheValue::User(_, valid_until) => valid_until,
                     };
 
                     let now = Utc::now().naive_utc();
-                    
+
                     if valid_until < now {
                         storage.remove(&key);
                     }
                 }
+
+                if cancel_token.is_cancelled() {
+                    println::error("Cache Cancellation Token Received...");
+                    break;
+                }
             }
         });
 
-        Cache {
-            storage,
-            loop_handle
-        }
+        Cache { storage }
     }
 
-    pub async fn close(&self) {
-        self.loop_handle.abort();
-    }
-
-    pub async fn get_page<S>(&self, path: S) -> Option<schema::Page> 
-    where S: Into<String>
+    pub async fn get_page<S>(&self, path: S) -> Option<schema::Page>
+    where
+        S: Into<String>,
     {
         let storage = self.storage.lock().await;
         let result = storage.get(&CacheKey::Page(path.into()));
@@ -76,22 +76,23 @@ impl Cache {
         if let Some(result) = result {
             match result {
                 CacheValue::Page(page, _) => Some(page.clone()),
-                _ => None
+                _ => None,
             }
         } else {
             None
         }
     }
 
-    pub async fn get_user<U>(&self, id: U) -> Option<schema::AdminUser> 
-    where U: Into<Uuid>
-    { 
+    pub async fn get_user<U>(&self, id: U) -> Option<schema::AdminUser>
+    where
+        U: Into<Uuid>,
+    {
         let storage = self.storage.lock().await;
-        let result = storage.get(&CacheKey::User(id.into())); 
+        let result = storage.get(&CacheKey::User(id.into()));
         if let Some(result) = result {
             match result {
                 CacheValue::User(user, _) => Some(user.clone()),
-                _ => None
+                _ => None,
             }
         } else {
             None
@@ -100,24 +101,29 @@ impl Cache {
 
     pub async fn set_page(&mut self, page: &schema::Page) {
         let naive_time = Utc::now().naive_utc();
-        let valid_until = match naive_time.checked_add_signed(TimeDelta::minutes(1)) {
-            Some(result) => result, 
-            None => {return}
+        let valid_until = match naive_time.checked_add_signed(TimeDelta::seconds(30)) {
+            Some(result) => result,
+            None => return,
         };
 
         let mut storage = self.storage.lock().await;
-        storage.insert(CacheKey::Page(page.path.clone()), CacheValue::Page(page.clone(), valid_until));
+        storage.insert(
+            CacheKey::Page(page.path.clone()),
+            CacheValue::Page(page.clone(), valid_until),
+        );
     }
-    
+
     pub async fn set_user(&mut self, user: &schema::AdminUser) {
         let naive_time = Utc::now().naive_utc();
-        let valid_until = match naive_time.checked_add_signed(TimeDelta::minutes(1)) {
-            Some(result) => result, 
-            None => {return}
+        let valid_until = match naive_time.checked_add_signed(TimeDelta::seconds(30)) {
+            Some(result) => result,
+            None => return,
         };
 
         let mut storage = self.storage.lock().await;
-        storage.insert(CacheKey::User(user.id), CacheValue::User(user.clone(), valid_until));
+        storage.insert(
+            CacheKey::User(user.id),
+            CacheValue::User(user.clone(), valid_until),
+        );
     }
 }
-

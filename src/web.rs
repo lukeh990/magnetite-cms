@@ -5,9 +5,13 @@
  * See the file "LICENSE" in the root of this project.
  */
 
-use crate::database::Database;
+use crate::{database::Database, util::println};
 use actix_web::{get, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use color_eyre::Result;
+use html::page_to_response;
+use tokio_util::{sync::CancellationToken, task::TaskTracker};
+
+mod html;
 
 struct AppState {
     db: Database,
@@ -35,17 +39,33 @@ async fn managed_pages(req: HttpRequest, data: web::Data<AppState>) -> impl Resp
         },
     };
 
-    HttpResponse::Ok().body(format!("{:?}", page))
+    page_to_response(page).await
 }
 
-pub async fn start_server(bind: String, db: Database) -> Result<()> {
-    Ok(HttpServer::new(move || {
+pub async fn start_server(
+    bind: String,
+    db: Database,
+    tracker: &TaskTracker,
+    cancel_token: CancellationToken,
+) -> Result<()> {
+    let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState { db: db.clone() }))
             .service(admin)
             .service(managed_pages)
     })
     .bind(bind)?
-    .run()
-    .await?)
+    .run();
+
+    let clone_tracker = tracker.clone();
+
+    tracker.spawn(async move {
+        let server_handle = clone_tracker.spawn(server);
+
+        cancel_token.cancelled().await;
+        println::error("Webserver Cancellation Token Received...");
+        server_handle.abort();
+    });
+
+    Ok(())
 }

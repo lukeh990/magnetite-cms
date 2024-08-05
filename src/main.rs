@@ -17,11 +17,21 @@
 
 use color_eyre::Result;
 use std::env;
+use tokio::signal;
+use tokio_util::sync::CancellationToken;
+use tokio_util::task::TaskTracker;
 use util::println;
 
 mod database;
 mod util;
 mod web;
+
+async fn shutdown(cancel_token: CancellationToken, tracker: TaskTracker) {
+    println::error("Shutdown Signal Received.");
+
+    cancel_token.cancel();
+    tracker.wait().await;
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -47,19 +57,37 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Cancellation Tokens
+    let cancel_token = CancellationToken::new();
+
+    let db_cancel_token = cancel_token.clone();
+    let web_cancel_token = cancel_token.clone();
+
+    let tracker = TaskTracker::new();
+
     // Load Plugins
     println::warn("Plugin Functionality is still being implemented");
 
     // Setup database thread
     println::info("Initializing DB");
-    let db = database::Database::new(database_url).await?;
+    let db = database::Database::new(database_url, &tracker, db_cancel_token).await?;
     println::info("Sucessfully connected to DB");
 
     // Setup actix thread
     println::info(format!("Starting HTTP Server on {}", server_bind));
-    web::start_server(server_bind, db).await?;
+    web::start_server(server_bind, db, &tracker, web_cancel_token).await?;
 
-    // Shutdown
-    println::error("Magnetite CMS Server has stopped.");
-    Ok(())
+    tracker.close();
+
+    // Ctrl + C Handler
+    match signal::ctrl_c().await {
+        Ok(()) => {
+            shutdown(cancel_token, tracker).await;
+            Ok(())
+        }
+        Err(err) => {
+            shutdown(cancel_token, tracker).await;
+            Err(err.into())
+        }
+    }
 }
