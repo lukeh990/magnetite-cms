@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO pages VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamp",
+        "Uuid",
+        "Timestamp",
+        "Uuid",
+        "Bool",
+        "Text",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "06abdf703a9cc57a6571732b9c64b0b4377bf46956d2a5e56cf0eae9906675d4"
+}

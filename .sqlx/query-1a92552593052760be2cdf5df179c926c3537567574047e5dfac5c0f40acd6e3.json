@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE pages SET \n                created_at = $1, \n                created_by = $2, \n                modified_at = $3, \n                modified_by = $4, \n                published = $5, \n                metadata = $6,\n                body = $7 \n                WHERE \"path\" = $8",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamp",
+        "Uuid",
+        "Timestamp",
+        "Uuid",
+        "Bool",
+        "TextArray",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1a92552593052760be2cdf5df179c926c3537567574047e5dfac5c0f40acd6e3"
+}

@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM pages WHERE path = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "modified_at",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 4,
+        "name": "modified_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "published",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "metadata",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0f580fed019074804afadbdc257b1e2656a8590733f6f4109b0dc5400cd160df"
+}
