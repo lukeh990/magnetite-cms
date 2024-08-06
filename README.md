@@ -2,6 +2,14 @@
 <img src="static/magnetite-300x300.png" width="300" alt="Logo" />
 </p>
 <h1 align="center">Magnetite CMS</h1>
+<p align="center">
+<img alt="GitHub License" src="https://img.shields.io/github/license/lukeh990/magnetite-cms?style=flat-square">
+<img alt="GitHub branch status" src="https://img.shields.io/github/checks-status/lukeh990/magnetite-cms/main?style=flat-square">
+<img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/lukeh990?style=flat-square">
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/lukeh990/magnetite-cms?style=flat-square">
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/lukeh990/magnetite-cms?style=flat-square">
+
+</p>
 
 Magnetite CMS provides a all-in-one Content Management System for your website.
 Magnetite is infinitely customizable with support for plugins.
