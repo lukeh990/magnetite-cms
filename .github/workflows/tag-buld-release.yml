@@ -7,6 +7,8 @@ env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-Dwarnings"
   SQLX_OFFLINE: true
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
