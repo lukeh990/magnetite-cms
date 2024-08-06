@@ -1,6 +1,14 @@
 name: On Push Clippy and Test
 
-on: [push, pull_request]
+on: 
+  push:
+    paths:
+      - src/**
+      - migrations/**
+      - .sqlx/**
+      - static/**
+      - Cargo.toml
+  pull_request:
 
 env:
   CARGO_TERM_COLOR: always
