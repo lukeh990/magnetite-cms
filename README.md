@@ -1,4 +1,8 @@
-# Magnetite CMS
+<p align="center">
+<img src="static/magnetite-300x300.png" width="300" alt="Logo" />
+</p>
+<h1 align="center">Magnetite CMS</h1>
+
 Magnetite CMS provides a all-in-one Content Management System for your website.
 Magnetite is infinitely customizable with support for plugins.
 
@@ -27,6 +31,6 @@ Project To-Do List:
 - [X] Basic Database API
 - [X] Basic Database Caching
 - [ ] HTTP Admin API
-- [ ] HTTP renderer
+- [X] HTML renderer
 - [ ] Admin UI
 - [ ] Plugin support
