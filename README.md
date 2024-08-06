@@ -4,7 +4,7 @@
 <h1 align="center">Magnetite CMS</h1>
 <p align="center">
 <img alt="GitHub License" src="https://img.shields.io/github/license/lukeh990/magnetite-cms?style=flat-square">
-<img alt="GitHub branch check runs" src="https://img.shields.io/github/check-runs/lukeh990/magnetite-cms/main">
+<img alt="GitHub branch check runs" src="https://img.shields.io/github/check-runs/lukeh990/magnetite-cms/main?style=flat-square">
 <img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/lukeh990?style=flat-square">
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/lukeh990/magnetite-cms?style=flat-square">
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/lukeh990/magnetite-cms?style=flat-square">
