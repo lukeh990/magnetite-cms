@@ -7,8 +7,7 @@
 <img alt="GitHub branch check runs" src="https://img.shields.io/github/check-runs/lukeh990/magnetite-cms/main?style=flat-square">
 <img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/lukeh990?style=flat-square">
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/lukeh990/magnetite-cms?style=flat-square">
-<img alt="GitHub Release" src="https://img.shields.io/github/v/release/lukeh990/magnetite-cms?style=flat-square">
-
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/lukeh990/magnetite-cms?include_prereleases&display_name=tag&style=flat-square">
 </p>
 
 Magnetite CMS provides a all-in-one Content Management System for your website.
